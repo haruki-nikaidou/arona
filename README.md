@@ -1,1 +1,3 @@
-# arona
+# Arona
+
+Personal AI assistant.
