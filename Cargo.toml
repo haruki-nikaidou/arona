@@ -1,12 +1,14 @@
 [workspace]
 resolver = "3"
-members = ["libs/wakuwaku"]
+members = ["libs/claude_api",
+    "libs/wakuwaku",
+]
 
 [workspace.dependencies]
 # Runtime
 tokio = { version = "1.49", features = ["full"] }
 futures = "0.3"
-tokio-stream = "0.1"
+tokio-stream = {version = "0.1", features = ["full"]}
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "registry"] }
 lazy_static = "1.5.0"
@@ -75,7 +77,7 @@ smallvec = { version = "1.14.0", features = [
 ] }
 
 # External tools
-reqwest = { version = "0.12", features = ["json", "gzip", "brotli", "zstd", "deflate"] }
+reqwest = { version = "0.12", features = ["json", "gzip", "brotli", "zstd", "deflate", "multipart", "stream"] }
 lettre = { version = "0.11", features = ["tokio1", "tokio1-native-tls"] }
 
 # Auth & Security
