@@ -10,6 +10,7 @@ members = [
     "modules/interface",
     "modules/memory_repository",
     "modules/plugin_registrar",
+    "modules/shield",
     "modules/vault",
     "plugin/gmail",
     "user_interface/telegram_bot",

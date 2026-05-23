@@ -17,6 +17,7 @@
       <sourceFolder url="file://$MODULE_DIR$/modules/interface_registrar/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/modules/memory_repository/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/modules/plugin_registrar/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/shield/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/modules/vault/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/plugin/gmail/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/user_interface/telegram_bot/src" isTestSource="false" />
