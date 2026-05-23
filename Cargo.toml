@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["libs/claude_api",
+members = [
     "libs/wakuwaku",
 ]
 
