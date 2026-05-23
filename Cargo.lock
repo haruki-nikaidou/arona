@@ -3,6 +3,14 @@
 version = 4
 
 [[package]]
+name = "admin-tool"
+version = "0.1.0"
+
+[[package]]
+name = "administration"
+version = "0.1.0"
+
+[[package]]
 name = "ahash"
 version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -21,6 +29,10 @@ checksum = "ddd31a130427c27518df266943a5308ed92d4b226cc639f5a8f1002816174301"
 dependencies = [
  "memchr",
 ]
+
+[[package]]
+name = "ai_caller"
+version = "0.1.0"
 
 [[package]]
 name = "allocator-api2"
@@ -108,6 +120,10 @@ name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
+
+[[package]]
+name = "auth"
+version = "0.1.0"
 
 [[package]]
 name = "autocfg"
@@ -688,6 +704,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "gmail"
+version = "0.1.0"
+
+[[package]]
 name = "h2"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -994,6 +1014,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "interface"
+version = "0.1.0"
+
+[[package]]
 name = "itoa"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1126,6 +1150,10 @@ name = "memchr"
 version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8ca58f447f06ed17d5fc4043ce1b10dd205e060fb3ce5b979b8ed8e59ff3f79"
+
+[[package]]
+name = "memory_repository"
+version = "0.1.0"
 
 [[package]]
 name = "mime"
@@ -1334,6 +1362,10 @@ name = "plain"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4596b6d070b27117e987119b4dac604f3c58cfb0b191112e24771b2faeac1a6"
+
+[[package]]
+name = "plugin_registrar"
+version = "0.1.0"
 
 [[package]]
 name = "potential_utf"
@@ -1798,6 +1830,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "server"
+version = "0.1.0"
+
+[[package]]
 name = "sha1"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2171,6 +2207,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 
 [[package]]
+name = "telegram_bot"
+version = "0.1.0"
+
+[[package]]
 name = "thiserror"
 version = "2.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2515,6 +2555,10 @@ dependencies = [
  "js-sys",
  "wasm-bindgen",
 ]
+
+[[package]]
+name = "vault"
+version = "0.1.0"
 
 [[package]]
 name = "vcpkg"

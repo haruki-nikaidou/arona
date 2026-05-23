@@ -7,6 +7,19 @@
       <sourceFolder url="file://$MODULE_DIR$/libs/anthropic-sdk-rust/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/libs/claude_api/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/libs/wakuwaku/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/binary/admin-tool/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/binary/server/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/libs/plugin_protocol/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/administration/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/ai_caller/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/auth/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/interface/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/interface_registrar/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/memory_repository/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/plugin_registrar/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/vault/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/plugin/gmail/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/user_interface/telegram_bot/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
