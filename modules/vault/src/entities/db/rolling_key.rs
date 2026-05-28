@@ -5,5 +5,5 @@ pub struct RollingKeyEntity {
     pub encrypted_key: Vec<u8>,
     pub signature: Vec<u8>,
     pub created_at: u64,
-    pub parent: Option<Uuid>,
+    pub before: Option<Uuid>,
 }
