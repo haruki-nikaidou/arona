@@ -9,7 +9,7 @@ pub struct ScopeRange(pub SmallVec<[ScopeRangeSection; 3]>);
 impl ScopeRange {
     /// O(m·n) DP match, where m = pattern sections, n = scope segments.
     ///
-    /// `dp[j]` = "can pattern[0..i] match scope[0..j]" after processing i sections.
+    /// `dp[j]` = "can pattern\[0..i] match scope\[0..j]" after processing i sections.
     /// Each section type is a simple in-place linear scan — no recursion, no branching
     /// explosion from consecutive wildcards.
     pub fn matches(&self, scope: Scope) -> bool {
