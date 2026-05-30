@@ -6,3 +6,8 @@ pub mod conversation_message;
 pub mod calender;
 pub mod calender_daily_event;
 pub mod calender_event;
+pub mod contact_identity;
+pub mod contact_stories;
+pub mod contact;
+pub mod diary;
+pub mod calender_task;
