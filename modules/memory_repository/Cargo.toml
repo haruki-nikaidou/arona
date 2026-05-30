@@ -12,3 +12,4 @@ wakuwaku.workspace = true
 kanau.workspace = true
 rkyv.workspace = true
 redis.workspace = true
+tracing.workspace = true

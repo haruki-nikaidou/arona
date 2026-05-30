@@ -1,8 +1,12 @@
+use kanau::processor::Processor;
 use rand::distr::SampleString;
 use time::PrimitiveDateTime;
+use tracing::instrument;
 use uuid::Uuid;
+use wakuwaku::sqlx::DatabaseProcessor;
 
 /// A session represents a logged-in state of a user. It is stored in Redis and used for authentication and authorization.
+#[derive(Debug, Clone)]
 pub struct SessionEntity {
     /// A self-incrementing serial number as primary key.
     pub serial: i64,
@@ -18,4 +22,34 @@ pub struct SessionEntity {
 pub fn generate_session_id() -> String {
     const LENGTH: usize = 128;
     rand::distr::Alphanumeric.sample_string(&mut rand::rng(), LENGTH)
+}
+
+/// Find a [`SessionEntity`] by its bigserial primary key.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FindSessionBySerial {
+    pub serial: i64,
+}
+
+impl Processor<FindSessionBySerial> for DatabaseProcessor {
+    type Output = Option<SessionEntity>;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:FindSessionBySerial", err, fields(serial = input.serial))]
+    async fn process(
+        &self,
+        input: FindSessionBySerial,
+    ) -> Result<Option<SessionEntity>, sqlx::Error> {
+        sqlx::query_as!(
+            SessionEntity,
+            r#"
+            SELECT serial, user_id, session_id, last_refreshed, expires
+            FROM auth.session
+            WHERE serial = $1
+            LIMIT 1
+            "#,
+            input.serial,
+        )
+        .fetch_optional(self.db())
+        .await
+    }
 }

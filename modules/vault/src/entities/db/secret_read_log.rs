@@ -1,6 +1,9 @@
 //! Audit logging for secret access.
 
+use kanau::processor::Processor;
 use time::PrimitiveDateTime;
+use tracing::instrument;
+use wakuwaku::sqlx::DatabaseProcessor;
 
 /// An audit log entry recording an attempt to read a secret.
 ///
@@ -35,7 +38,8 @@ pub struct SecretReadLogEntity {
 }
 
 /// Outcome of a secret read operation.
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, sqlx::Type)]
+#[sqlx(type_name = "vault.secret_read_response")]
 pub enum SecretReadResponse {
     /// The secret was successfully decrypted and returned.
     Success,
@@ -48,4 +52,42 @@ pub enum SecretReadResponse {
 
     /// The secret's integrity signature did not match (possible tampering).
     SignatureVerificationFailed,
+}
+
+/// Find a [`SecretReadLogEntity`] by its bigserial primary key.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FindSecretReadLogById {
+    pub id: i64,
+}
+
+impl Processor<FindSecretReadLogById> for DatabaseProcessor {
+    type Output = Option<SecretReadLogEntity>;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:FindSecretReadLogById", err, fields(id = input.id))]
+    async fn process(
+        &self,
+        input: FindSecretReadLogById,
+    ) -> Result<Option<SecretReadLogEntity>, sqlx::Error> {
+        sqlx::query_as!(
+            SecretReadLogEntity,
+            r#"
+            SELECT
+                id,
+                target,
+                timestamp,
+                version,
+                response AS "response: SecretReadResponse",
+                wrong_password,
+                audience,
+                scope
+            FROM vault.secret_read_log
+            WHERE id = $1
+            LIMIT 1
+            "#,
+            input.id,
+        )
+        .fetch_optional(self.db())
+        .await
+    }
 }

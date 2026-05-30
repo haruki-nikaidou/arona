@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, readable_name, bucket_name, region, api_endpoint, credential\n            FROM memory.object_storage_bucket\n            WHERE id = $1\n            LIMIT 1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "readable_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "bucket_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "region",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "api_endpoint",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "credential",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "a4586c001aa759e8e5450ac3a6b5add795b089f33b6358ff52bc8b4c59bd7c26"
+}

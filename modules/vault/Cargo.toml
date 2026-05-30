@@ -15,3 +15,4 @@ redis.workspace = true
 thiserror.workspace = true
 smallvec.workspace = true
 compact_str.workspace = true
+tracing.workspace = true

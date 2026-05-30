@@ -1,0 +1,77 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                id,\n                message_id,\n                position,\n                modality AS \"modality: ContentModality\",\n                text,\n                object_hash,\n                image_detail,\n                audio_format\n            FROM memory.conversation_content\n            WHERE id = $1\n            LIMIT 1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "message_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "position",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "modality: ContentModality",
+        "type_info": {
+          "Custom": {
+            "name": "memory.content_modality",
+            "kind": {
+              "Enum": [
+                "Text",
+                "Image",
+                "Audio",
+                "File",
+                "Video"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "text",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "object_hash",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 6,
+        "name": "image_detail",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "audio_format",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "328c15a3eafc2c75e0caa684ac2cec7652c07d3d3709de58eec4d0624d599714"
+}

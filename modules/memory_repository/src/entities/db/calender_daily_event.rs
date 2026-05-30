@@ -1,12 +1,16 @@
 //! All-day calendar events without specific times.
 
+use kanau::processor::Processor;
 use time::{Date, PrimitiveDateTime};
+use tracing::instrument;
 use uuid::Uuid;
+use wakuwaku::sqlx::DatabaseProcessor;
 
 /// An all-day event that spans an entire date (no specific time).
 ///
 /// Used for holidays, birthdays, deadlines, and other date-based
 /// events that don't have a specific start/end time.
+#[derive(Debug, Clone)]
 pub struct CalenderDailyEventEntity {
     /// Unique identifier for this event.
     pub id: i64,
@@ -37,6 +41,8 @@ pub struct CalenderDailyEventEntity {
 }
 
 /// Recurrence pattern for all-day events.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type)]
+#[sqlx(type_name = "memory.daily_event_repeat")]
 pub enum DailyEventRepeat {
     /// Single occurrence, no repetition.
     NoRepeat,
@@ -46,4 +52,43 @@ pub enum DailyEventRepeat {
     EveryYear,
     /// Repeats every weekday (Monday through Friday).
     EveryWeekday,
+}
+
+/// Find a [`CalenderDailyEventEntity`] by its bigserial primary key.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FindCalenderDailyEventById {
+    pub id: i64,
+}
+
+impl Processor<FindCalenderDailyEventById> for DatabaseProcessor {
+    type Output = Option<CalenderDailyEventEntity>;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:FindCalenderDailyEventById", err, fields(id = input.id))]
+    async fn process(
+        &self,
+        input: FindCalenderDailyEventById,
+    ) -> Result<Option<CalenderDailyEventEntity>, sqlx::Error> {
+        sqlx::query_as!(
+            CalenderDailyEventEntity,
+            r#"
+            SELECT
+                id,
+                calendar_id,
+                title,
+                description,
+                date,
+                repeat AS "repeat: DailyEventRepeat",
+                repeat_until,
+                created,
+                updated
+            FROM memory.calender_daily_event
+            WHERE id = $1
+            LIMIT 1
+            "#,
+            input.id,
+        )
+        .fetch_optional(self.db())
+        .await
+    }
 }

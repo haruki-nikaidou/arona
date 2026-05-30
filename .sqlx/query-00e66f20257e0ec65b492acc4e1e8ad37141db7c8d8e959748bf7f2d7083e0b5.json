@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT hash, file_name, file_size, description, file_type, created_at, stored_in_bucket\n            FROM memory.object_storage\n            WHERE hash = $1\n            LIMIT 1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "hash",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 1,
+        "name": "file_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "file_size",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "file_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
+        "name": "stored_in_bucket",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Bytea"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "00e66f20257e0ec65b492acc4e1e8ad37141db7c8d8e959748bf7f2d7083e0b5"
+}

@@ -131,6 +131,7 @@ dependencies = [
  "rkyv 0.8.16",
  "sqlx",
  "time",
+ "tracing",
  "uuid",
  "wakuwaku",
 ]
@@ -1238,6 +1239,7 @@ dependencies = [
  "rkyv 0.8.16",
  "sqlx",
  "time",
+ "tracing",
  "uuid",
  "wakuwaku",
 ]
@@ -2731,6 +2733,7 @@ dependencies = [
  "sqlx",
  "thiserror",
  "time",
+ "tracing",
  "uuid",
  "wakuwaku",
 ]

@@ -1,12 +1,16 @@
 //! Time-specific calendar events.
 
+use kanau::processor::Processor;
 use time::{Date, OffsetDateTime, PrimitiveDateTime};
+use tracing::instrument;
 use uuid::Uuid;
+use wakuwaku::sqlx::DatabaseProcessor;
 
 /// A calendar event with a specific start time.
 ///
 /// Used for meetings, appointments, reminders, and other events
 /// that occur at a particular moment.
+#[derive(Debug, Clone)]
 pub struct CalenderEventEntity {
     /// Unique identifier for this event.
     pub id: i64,
@@ -37,6 +41,8 @@ pub struct CalenderEventEntity {
 }
 
 /// Recurrence pattern for time-specific events.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type)]
+#[sqlx(type_name = "memory.calender_event_repeat")]
 pub enum CalenderEventRepeat {
     /// Single occurrence, no repetition.
     NoRepeat,
@@ -46,4 +52,43 @@ pub enum CalenderEventRepeat {
     EveryMonth,
     /// Repeats at the same time every weekday.
     EveryWeekday,
+}
+
+/// Find a [`CalenderEventEntity`] by its bigserial primary key.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FindCalenderEventById {
+    pub id: i64,
+}
+
+impl Processor<FindCalenderEventById> for DatabaseProcessor {
+    type Output = Option<CalenderEventEntity>;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:FindCalenderEventById", err, fields(id = input.id))]
+    async fn process(
+        &self,
+        input: FindCalenderEventById,
+    ) -> Result<Option<CalenderEventEntity>, sqlx::Error> {
+        sqlx::query_as!(
+            CalenderEventEntity,
+            r#"
+            SELECT
+                id,
+                calendar_id,
+                title,
+                description,
+                time,
+                repeat AS "repeat: CalenderEventRepeat",
+                repeat_until,
+                created_at,
+                updated_at
+            FROM memory.calender_event
+            WHERE id = $1
+            LIMIT 1
+            "#,
+            input.id,
+        )
+        .fetch_optional(self.db())
+        .await
+    }
 }
