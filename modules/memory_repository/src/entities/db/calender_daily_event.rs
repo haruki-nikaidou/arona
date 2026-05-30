@@ -11,7 +11,7 @@ pub struct CalenderDailyEventEntity {
     /// Unique identifier for this event.
     pub id: i64,
 
-    /// ID of the parent [`CalendarEntity`](super::calender::CalendarEntity).
+    /// ID of the parent [`CalenderEntity`](super::calender::CalenderEntity).
     pub calendar_id: Uuid,
 
     /// Event title.
