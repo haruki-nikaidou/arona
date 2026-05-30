@@ -1,8 +1,27 @@
+//! Scope-based permission system for vault secrets.
+//!
+//! This module provides a glob-like pattern matching system for controlling
+//! access to secrets. Scopes are hierarchical, dot-separated identifiers
+//! (e.g., `@isla.memory_repository.object_storage`), and scope ranges are
+//! patterns that can match one or more scopes using wildcards.
+//!
+//! System scopes (prefixed with `@isla`) are reserved for internal Isla
+//! services.
+
 use compact_str::CompactString;
 use smallvec::{SmallVec, smallvec};
 use std::str::FromStr;
 use std::sync::LazyLock;
 
+/// A pattern that matches zero or more [`Scope`]s.
+///
+/// Scope ranges support glob-like syntax for flexible permission grants:
+/// - Literal segments match exactly (e.g., `foo` matches only `foo`)
+/// - `*` matches exactly one segment
+/// - `**` matches zero or more segments
+/// - `+` matches one or more segments
+///
+/// Patterns are parsed from dot-separated strings (e.g., `@isla.**.read`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ScopeRange(pub SmallVec<[ScopeRangeSection; 3]>);
 
@@ -64,8 +83,10 @@ impl ScopeRange {
     }
 }
 
+/// Error returned when parsing a [`ScopeRange`] from a string fails.
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum ScopeParseError {
+    /// A segment in the pattern was empty (e.g., `foo..bar` has an empty segment at index 1).
     #[error("Expect a non-empty string at {0}, get an empty string")]
     Empty(usize),
 }
@@ -92,20 +113,26 @@ impl FromStr for ScopeRange {
     }
 }
 
+/// A single segment within a [`ScopeRange`] pattern.
+///
+/// Each section represents one dot-separated component of a scope range
+/// and defines how that component matches against scope segments.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ScopeRangeSection {
+    /// A literal string that must match exactly.
     Lit(CompactString),
 
-    /// `*` matches any one scope
+    /// `*` matches exactly one segment (any value).
     AnyOne,
 
-    /// `**` matches any number of scopes, including zero
+    /// `**` matches zero or more segments.
     Wildcard,
 
-    /// `+` matches one or more scopes
+    /// `+` matches one or more segments.
     OneOrMore,
 }
 
+/// Matches all system-reserved scopes (those starting with `@isla`).
 pub static SYSTEM_SCOPE_RANGE: LazyLock<ScopeRange> = LazyLock::new(|| {
     ScopeRange(smallvec![
         ScopeRangeSection::Lit(CompactString::const_new("@isla")),
@@ -113,16 +140,22 @@ pub static SYSTEM_SCOPE_RANGE: LazyLock<ScopeRange> = LazyLock::new(|| {
     ])
 });
 
-/// A scope is a hard-coded static slice of string segments.
+/// A concrete permission scope represented as a static slice of segments.
+///
+/// Scopes are hierarchical identifiers used to control access to secrets.
+/// They are matched against [`ScopeRange`] patterns to determine whether
+/// a particular operation is permitted.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Scope(pub &'static [&'static str]);
 
 impl Scope {
+    /// Returns `true` if this scope is a system scope (starts with `@isla`).
     pub fn is_system_scope(self) -> bool {
         SYSTEM_SCOPE_RANGE.matches(self)
     }
 }
 
+/// Scope for accessing the object storage subsystem in the memory repository.
 pub static OBJECT_STORAGE_SCOPE: Scope = Scope(&["@isla", "memory_repository", "object_storage"]);
 
 #[cfg(test)]
