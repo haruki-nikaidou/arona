@@ -1,3 +1,5 @@
+#[derive(Debug, Clone)]
+/// Password manager account entity for accounts used by AI.
 pub struct AiAccountEntity {
     pub id: i32,
     pub name: String,

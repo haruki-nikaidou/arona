@@ -1,5 +1,7 @@
 use time::PrimitiveDateTime;
 
+#[derive(Debug, Clone)]
+/// Logs used for audit. Each time a secret is read, a log will be created.
 pub struct SecretReadLogEntity {
     pub id: i64,
     pub target: i64,
@@ -11,6 +13,7 @@ pub struct SecretReadLogEntity {
     pub scope: String,
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum SecretReadResponse {
     Success,
     WrongPassword,

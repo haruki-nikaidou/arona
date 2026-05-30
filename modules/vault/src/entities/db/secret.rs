@@ -1,5 +1,7 @@
 use uuid::Uuid;
 
+#[derive(Debug, Clone)]
+/// API tokens and other kinds of secrets. They are encrypted by [RollingKeyEntity](super::rolling_key::RollingKeyEntity).
 pub struct SecretEntity {
     pub id: i64,
     pub platform: String,
