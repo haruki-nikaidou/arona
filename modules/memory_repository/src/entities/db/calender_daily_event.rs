@@ -8,6 +8,7 @@ pub struct CalenderDailyEventEntity {
     pub description: String,
     pub date: Date,
     pub repeat: DailyEventRepeat,
+    pub repeat_until: Option<Date>,
     pub created: PrimitiveDateTime,
     pub updated: PrimitiveDateTime,
 }
