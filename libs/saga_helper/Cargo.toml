@@ -1,0 +1,13 @@
+[package]
+name = "saga_helper"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+wakuwaku.workspace = true
+uuid.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+kanau.workspace = true
+amqprs.workspace = true
+anyhow.workspace = true

@@ -2,3 +2,10 @@
 //!
 //! Services encapsulate complex operations that span multiple entities
 //! or require coordination with external systems.
+
+pub mod calender;
+pub mod storage;
+pub mod contact;
+pub mod conversation;
+pub mod diary;
+pub mod manage;
