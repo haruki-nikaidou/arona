@@ -3,7 +3,6 @@ resolver = "3"
 members = [
     "binary/admin-tool",
     "binary/server",
-    "libs/wakuwaku",
     "modules/administration",
     "modules/ai_caller",
     "modules/auth",
@@ -24,7 +23,7 @@ tokio-stream = { version = "0.1", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "registry"] }
 lazy_static = "1.5.0"
-wakuwaku = { path = "libs/wakuwaku" }
+wakuwaku = { version = "0.1" }
 
 # Error handling
 thiserror = "2.0"
