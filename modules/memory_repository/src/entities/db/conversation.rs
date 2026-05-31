@@ -56,3 +56,172 @@ impl Processor<FindConversationById> for DatabaseProcessor {
         .await
     }
 }
+
+/// Insert a new conversation with its opening summary and Unix timestamps.
+#[derive(Debug, Clone)]
+pub struct CreateConversation {
+    pub opening_summary: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+impl Processor<CreateConversation> for DatabaseProcessor {
+    type Output = i64;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:CreateConversation", err)]
+    async fn process(&self, input: CreateConversation) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar!(
+            r#"
+            INSERT INTO memory.conversation (opening_summary, created_at, updated_at)
+            VALUES ($1, $2, $3)
+            RETURNING id
+            "#,
+            input.opening_summary,
+            input.created_at,
+            input.updated_at,
+        )
+        .fetch_one(self.db())
+        .await
+    }
+}
+
+/// Overwrite the opening summary of a conversation.
+#[derive(Debug, Clone)]
+pub struct UpdateConversationOpeningSummary {
+    pub id: i64,
+    pub opening_summary: String,
+}
+
+impl Processor<UpdateConversationOpeningSummary> for DatabaseProcessor {
+    type Output = bool;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:UpdateConversationOpeningSummary", err, fields(id = input.id))]
+    async fn process(
+        &self,
+        input: UpdateConversationOpeningSummary,
+    ) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            r#"
+            UPDATE memory.conversation
+            SET opening_summary = $2
+            WHERE id = $1
+            "#,
+            input.id,
+            input.opening_summary,
+        )
+        .execute(self.db())
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
+    }
+}
+
+/// Set the closing summary and bump `updated_at` when a conversation ends.
+#[derive(Debug, Clone)]
+pub struct CloseConversation {
+    pub id: i64,
+    pub closing_summary: String,
+    pub updated_at: i64,
+}
+
+impl Processor<CloseConversation> for DatabaseProcessor {
+    type Output = bool;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:CloseConversation", err, fields(id = input.id))]
+    async fn process(&self, input: CloseConversation) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            r#"
+            UPDATE memory.conversation
+            SET closing_summary = $2, updated_at = $3
+            WHERE id = $1
+            "#,
+            input.id,
+            input.closing_summary,
+            input.updated_at,
+        )
+        .execute(self.db())
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
+    }
+}
+
+/// Update `updated_at` to reflect recent activity.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TouchConversation {
+    pub id: i64,
+    pub updated_at: i64,
+}
+
+impl Processor<TouchConversation> for DatabaseProcessor {
+    type Output = bool;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:TouchConversation", err, fields(id = input.id))]
+    async fn process(&self, input: TouchConversation) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            "UPDATE memory.conversation SET updated_at = $2 WHERE id = $1",
+            input.id,
+            input.updated_at,
+        )
+        .execute(self.db())
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
+    }
+}
+
+/// Delete a conversation (cascades to messages and content).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DeleteConversation {
+    pub id: i64,
+}
+
+impl Processor<DeleteConversation> for DatabaseProcessor {
+    type Output = bool;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:DeleteConversation", err, fields(id = input.id))]
+    async fn process(&self, input: DeleteConversation) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            "DELETE FROM memory.conversation WHERE id = $1",
+            input.id,
+        )
+        .execute(self.db())
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
+    }
+}
+
+/// Paginated list of conversations ordered by most recent activity.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ListRecentConversations {
+    pub limit: i64,
+    pub offset: i64,
+}
+
+impl Processor<ListRecentConversations> for DatabaseProcessor {
+    type Output = Vec<ConversationEntity>;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:ListRecentConversations", err)]
+    async fn process(&self, input: ListRecentConversations) -> Result<Vec<ConversationEntity>, sqlx::Error> {
+        sqlx::query_as!(
+            ConversationEntity,
+            r#"
+            SELECT id, opening_summary, closing_summary, created_at, updated_at
+            FROM memory.conversation
+            ORDER BY updated_at DESC
+            LIMIT $1 OFFSET $2
+            "#,
+            input.limit,
+            input.offset,
+        )
+        .fetch_all(self.db())
+        .await
+    }
+}

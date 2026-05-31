@@ -131,3 +131,254 @@ impl Processor<FindCalenderTaskDependencyById> for DatabaseProcessor {
         .await
     }
 }
+
+/// Insert a new task into a calendar.
+#[derive(Debug, Clone)]
+pub struct CreateCalenderTask {
+    pub calendar_id: Uuid,
+    pub title: String,
+    pub description: String,
+    pub start_at: PrimitiveDateTime,
+    pub deadline: PrimitiveDateTime,
+    pub status: CalenderTaskStatus,
+}
+
+impl Processor<CreateCalenderTask> for DatabaseProcessor {
+    type Output = i64;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:CreateCalenderTask", err, fields(calendar_id = %input.calendar_id))]
+    async fn process(&self, input: CreateCalenderTask) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar!(
+            r#"
+            INSERT INTO memory.calender_task
+                (calendar_id, title, description, start_at, deadline, status)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING id
+            "#,
+            input.calendar_id,
+            input.title,
+            input.description,
+            input.start_at,
+            input.deadline,
+            input.status as CalenderTaskStatus,
+        )
+        .fetch_one(self.db())
+        .await
+    }
+}
+
+/// Update descriptive fields and time window of a task (not its status).
+#[derive(Debug, Clone)]
+pub struct UpdateCalenderTask {
+    pub id: i64,
+    pub title: String,
+    pub description: String,
+    pub start_at: PrimitiveDateTime,
+    pub deadline: PrimitiveDateTime,
+}
+
+impl Processor<UpdateCalenderTask> for DatabaseProcessor {
+    type Output = bool;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:UpdateCalenderTask", err, fields(id = input.id))]
+    async fn process(&self, input: UpdateCalenderTask) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            r#"
+            UPDATE memory.calender_task
+            SET title = $2, description = $3, start_at = $4, deadline = $5
+            WHERE id = $1
+            "#,
+            input.id,
+            input.title,
+            input.description,
+            input.start_at,
+            input.deadline,
+        )
+        .execute(self.db())
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
+    }
+}
+
+/// Transition a task's status and stamp `status_update_at`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct UpdateCalenderTaskStatus {
+    pub id: i64,
+    pub status: CalenderTaskStatus,
+}
+
+impl Processor<UpdateCalenderTaskStatus> for DatabaseProcessor {
+    type Output = bool;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:UpdateCalenderTaskStatus", err, fields(id = input.id))]
+    async fn process(&self, input: UpdateCalenderTaskStatus) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            r#"
+            UPDATE memory.calender_task
+            SET status = $2, status_update_at = (now() AT TIME ZONE 'utc')
+            WHERE id = $1
+            "#,
+            input.id,
+            input.status as CalenderTaskStatus,
+        )
+        .execute(self.db())
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
+    }
+}
+
+/// Delete a task by its primary key (cascades dependency rows).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DeleteCalenderTask {
+    pub id: i64,
+}
+
+impl Processor<DeleteCalenderTask> for DatabaseProcessor {
+    type Output = bool;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:DeleteCalenderTask", err, fields(id = input.id))]
+    async fn process(&self, input: DeleteCalenderTask) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            "DELETE FROM memory.calender_task WHERE id = $1",
+            input.id,
+        )
+        .execute(self.db())
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
+    }
+}
+
+/// Paginated list of tasks for a calendar, optionally filtered by status, ordered by deadline.
+#[derive(Debug, Clone, Copy)]
+pub struct ListCalenderTasksByCalendar {
+    pub calendar_id: Uuid,
+    pub status: Option<CalenderTaskStatus>,
+    pub limit: i64,
+    pub offset: i64,
+}
+
+impl Processor<ListCalenderTasksByCalendar> for DatabaseProcessor {
+    type Output = Vec<CalenderTaskEntity>;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:ListCalenderTasksByCalendar", err, fields(calendar_id = %input.calendar_id))]
+    async fn process(
+        &self,
+        input: ListCalenderTasksByCalendar,
+    ) -> Result<Vec<CalenderTaskEntity>, sqlx::Error> {
+        sqlx::query_as!(
+            CalenderTaskEntity,
+            r#"
+            SELECT
+                id,
+                calendar_id,
+                title,
+                description,
+                start_at,
+                deadline,
+                status AS "status: CalenderTaskStatus",
+                status_update_at
+            FROM memory.calender_task
+            WHERE calendar_id = $1
+              AND ($2::memory.calender_task_status IS NULL OR status = $2)
+            ORDER BY deadline ASC
+            LIMIT $3 OFFSET $4
+            "#,
+            input.calendar_id,
+            input.status as Option<CalenderTaskStatus>,
+            input.limit,
+            input.offset,
+        )
+        .fetch_all(self.db())
+        .await
+    }
+}
+
+/// Add a blocking dependency between two tasks.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CreateCalenderTaskDependency {
+    pub blocking_task_id: i64,
+    pub blocked_task_id: i64,
+}
+
+impl Processor<CreateCalenderTaskDependency> for DatabaseProcessor {
+    type Output = i64;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:CreateCalenderTaskDependency", err,
+        fields(blocking = input.blocking_task_id, blocked = input.blocked_task_id))]
+    async fn process(&self, input: CreateCalenderTaskDependency) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar!(
+            r#"
+            INSERT INTO memory.calender_task_dependency (blocking_task_id, blocked_task_id)
+            VALUES ($1, $2)
+            RETURNING id
+            "#,
+            input.blocking_task_id,
+            input.blocked_task_id,
+        )
+        .fetch_one(self.db())
+        .await
+    }
+}
+
+/// Remove a task dependency by its primary key.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DeleteCalenderTaskDependency {
+    pub id: i64,
+}
+
+impl Processor<DeleteCalenderTaskDependency> for DatabaseProcessor {
+    type Output = bool;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:DeleteCalenderTaskDependency", err, fields(id = input.id))]
+    async fn process(&self, input: DeleteCalenderTaskDependency) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            "DELETE FROM memory.calender_task_dependency WHERE id = $1",
+            input.id,
+        )
+        .execute(self.db())
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
+    }
+}
+
+/// All dependencies where the given task is the blocked (downstream) one.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ListCalenderTaskDependenciesByBlocked {
+    pub blocked_task_id: i64,
+}
+
+impl Processor<ListCalenderTaskDependenciesByBlocked> for DatabaseProcessor {
+    type Output = Vec<CalenderTaskDependencyEntity>;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:ListCalenderTaskDependenciesByBlocked", err,
+        fields(blocked_task_id = input.blocked_task_id))]
+    async fn process(
+        &self,
+        input: ListCalenderTaskDependenciesByBlocked,
+    ) -> Result<Vec<CalenderTaskDependencyEntity>, sqlx::Error> {
+        sqlx::query_as!(
+            CalenderTaskDependencyEntity,
+            r#"
+            SELECT id, blocking_task_id, blocked_task_id
+            FROM memory.calender_task_dependency
+            WHERE blocked_task_id = $1
+            ORDER BY id ASC
+            "#,
+            input.blocked_task_id,
+        )
+        .fetch_all(self.db())
+        .await
+    }
+}

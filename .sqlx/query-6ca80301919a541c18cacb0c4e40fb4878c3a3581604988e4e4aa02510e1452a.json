@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE memory.contact\n            SET display_name = $2, identity = $3, updated_at = (now() AT TIME ZONE 'utc')\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6ca80301919a541c18cacb0c4e40fb4878c3a3581604988e4e4aa02510e1452a"
+}

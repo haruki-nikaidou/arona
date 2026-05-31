@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, blocking_task_id, blocked_task_id\n            FROM memory.calender_task_dependency\n            WHERE blocked_task_id = $1\n            ORDER BY id ASC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "blocking_task_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "blocked_task_id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "540eff9355fcb8b2b02b16f326ef00a1507b3796de4557b2f27a4937a6bc3049"
+}

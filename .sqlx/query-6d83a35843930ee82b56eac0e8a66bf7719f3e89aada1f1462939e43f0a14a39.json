@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE memory.contact_identity\n            SET relationship = $2, relationship_updated_at = (now() AT TIME ZONE 'utc')\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        {
+          "Custom": {
+            "name": "memory.relationship",
+            "kind": {
+              "Enum": [
+                "Stranger",
+                "Master",
+                "Acquaintance",
+                "Dude",
+                "Ignored"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6d83a35843930ee82b56eac0e8a66bf7719f3e89aada1f1462939e43f0a14a39"
+}

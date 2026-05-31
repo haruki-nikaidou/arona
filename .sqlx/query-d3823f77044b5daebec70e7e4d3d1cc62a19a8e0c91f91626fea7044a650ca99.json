@@ -1,0 +1,31 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE memory.calender_event\n            SET title = $2, description = $3, time = $4, repeat = $5, repeat_until = $6,\n                updated_at = (now() AT TIME ZONE 'utc')\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text",
+        "Text",
+        "Timestamptz",
+        {
+          "Custom": {
+            "name": "memory.calender_event_repeat",
+            "kind": {
+              "Enum": [
+                "NoRepeat",
+                "EveryDay",
+                "EveryMonth",
+                "EveryWeekday"
+              ]
+            }
+          }
+        },
+        "Date"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d3823f77044b5daebec70e7e4d3d1cc62a19a8e0c91f91626fea7044a650ca99"
+}

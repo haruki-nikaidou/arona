@@ -83,3 +83,155 @@ impl Processor<FindContactIdentityById> for DatabaseProcessor {
         .await
     }
 }
+
+/// Insert a new cross-platform identity. The caller supplies the `id`.
+#[derive(Debug, Clone)]
+pub struct CreateContactIdentity {
+    pub id: Uuid,
+    pub identify_name: String,
+    pub description: String,
+    pub relationship: Relationship,
+}
+
+impl Processor<CreateContactIdentity> for DatabaseProcessor {
+    type Output = Uuid;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:CreateContactIdentity", err, fields(id = %input.id))]
+    async fn process(&self, input: CreateContactIdentity) -> Result<Uuid, sqlx::Error> {
+        sqlx::query_scalar!(
+            r#"
+            INSERT INTO memory.contact_identity (id, identify_name, description, relationship)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
+            "#,
+            input.id,
+            input.identify_name,
+            input.description,
+            input.relationship as Relationship,
+        )
+        .fetch_one(self.db())
+        .await
+    }
+}
+
+/// Update the name and description of an identity (not the relationship).
+#[derive(Debug, Clone)]
+pub struct UpdateContactIdentity {
+    pub id: Uuid,
+    pub identify_name: String,
+    pub description: String,
+}
+
+impl Processor<UpdateContactIdentity> for DatabaseProcessor {
+    type Output = bool;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:UpdateContactIdentity", err, fields(id = %input.id))]
+    async fn process(&self, input: UpdateContactIdentity) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            r#"
+            UPDATE memory.contact_identity
+            SET identify_name = $2, description = $3
+            WHERE id = $1
+            "#,
+            input.id,
+            input.identify_name,
+            input.description,
+        )
+        .execute(self.db())
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
+    }
+}
+
+/// Transition the relationship status of an identity and stamp `relationship_updated_at`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct UpdateContactIdentityRelationship {
+    pub id: Uuid,
+    pub relationship: Relationship,
+}
+
+impl Processor<UpdateContactIdentityRelationship> for DatabaseProcessor {
+    type Output = bool;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:UpdateContactIdentityRelationship", err, fields(id = %input.id))]
+    async fn process(
+        &self,
+        input: UpdateContactIdentityRelationship,
+    ) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            r#"
+            UPDATE memory.contact_identity
+            SET relationship = $2, relationship_updated_at = (now() AT TIME ZONE 'utc')
+            WHERE id = $1
+            "#,
+            input.id,
+            input.relationship as Relationship,
+        )
+        .execute(self.db())
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
+    }
+}
+
+/// Delete an identity (cascades to all linked contacts and stories).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DeleteContactIdentity {
+    pub id: Uuid,
+}
+
+impl Processor<DeleteContactIdentity> for DatabaseProcessor {
+    type Output = bool;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:DeleteContactIdentity", err, fields(id = %input.id))]
+    async fn process(&self, input: DeleteContactIdentity) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            "DELETE FROM memory.contact_identity WHERE id = $1",
+            input.id,
+        )
+        .execute(self.db())
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
+    }
+}
+
+/// Paginated list of all identities ordered alphabetically by `identify_name`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ListContactIdentities {
+    pub limit: i64,
+    pub offset: i64,
+}
+
+impl Processor<ListContactIdentities> for DatabaseProcessor {
+    type Output = Vec<ContactIdentityEntity>;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:ListContactIdentities", err)]
+    async fn process(&self, input: ListContactIdentities) -> Result<Vec<ContactIdentityEntity>, sqlx::Error> {
+        sqlx::query_as!(
+            ContactIdentityEntity,
+            r#"
+            SELECT
+                id,
+                identify_name,
+                description,
+                relationship AS "relationship: Relationship",
+                first_meet_at,
+                relationship_updated_at
+            FROM memory.contact_identity
+            ORDER BY identify_name ASC
+            LIMIT $1 OFFSET $2
+            "#,
+            input.limit,
+            input.offset,
+        )
+        .fetch_all(self.db())
+        .await
+    }
+}

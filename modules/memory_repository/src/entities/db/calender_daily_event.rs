@@ -92,3 +92,145 @@ impl Processor<FindCalenderDailyEventById> for DatabaseProcessor {
         .await
     }
 }
+
+/// Insert a new all-day event into a calendar.
+#[derive(Debug, Clone)]
+pub struct CreateCalenderDailyEvent {
+    pub calendar_id: Uuid,
+    pub title: String,
+    pub description: String,
+    pub date: Date,
+    pub repeat: DailyEventRepeat,
+    pub repeat_until: Option<Date>,
+}
+
+impl Processor<CreateCalenderDailyEvent> for DatabaseProcessor {
+    type Output = i64;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:CreateCalenderDailyEvent", err, fields(calendar_id = %input.calendar_id))]
+    async fn process(&self, input: CreateCalenderDailyEvent) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar!(
+            r#"
+            INSERT INTO memory.calender_daily_event
+                (calendar_id, title, description, date, repeat, repeat_until)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING id
+            "#,
+            input.calendar_id,
+            input.title,
+            input.description,
+            input.date,
+            input.repeat as DailyEventRepeat,
+            input.repeat_until,
+        )
+        .fetch_one(self.db())
+        .await
+    }
+}
+
+/// Update the mutable fields of an all-day calendar event.
+#[derive(Debug, Clone)]
+pub struct UpdateCalenderDailyEvent {
+    pub id: i64,
+    pub title: String,
+    pub description: String,
+    pub date: Date,
+    pub repeat: DailyEventRepeat,
+    pub repeat_until: Option<Date>,
+}
+
+impl Processor<UpdateCalenderDailyEvent> for DatabaseProcessor {
+    type Output = bool;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:UpdateCalenderDailyEvent", err, fields(id = input.id))]
+    async fn process(&self, input: UpdateCalenderDailyEvent) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            r#"
+            UPDATE memory.calender_daily_event
+            SET title = $2, description = $3, date = $4, repeat = $5, repeat_until = $6,
+                updated = (now() AT TIME ZONE 'utc')
+            WHERE id = $1
+            "#,
+            input.id,
+            input.title,
+            input.description,
+            input.date,
+            input.repeat as DailyEventRepeat,
+            input.repeat_until,
+        )
+        .execute(self.db())
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
+    }
+}
+
+/// Delete an all-day calendar event by its primary key.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DeleteCalenderDailyEvent {
+    pub id: i64,
+}
+
+impl Processor<DeleteCalenderDailyEvent> for DatabaseProcessor {
+    type Output = bool;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:DeleteCalenderDailyEvent", err, fields(id = input.id))]
+    async fn process(&self, input: DeleteCalenderDailyEvent) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            "DELETE FROM memory.calender_daily_event WHERE id = $1",
+            input.id,
+        )
+        .execute(self.db())
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
+    }
+}
+
+/// All-day events within a calendar that fall within the given date range (inclusive).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ListCalenderDailyEventsInRange {
+    pub calendar_id: Uuid,
+    pub from: Date,
+    pub to: Date,
+}
+
+impl Processor<ListCalenderDailyEventsInRange> for DatabaseProcessor {
+    type Output = Vec<CalenderDailyEventEntity>;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:ListCalenderDailyEventsInRange", err, fields(calendar_id = %input.calendar_id))]
+    async fn process(
+        &self,
+        input: ListCalenderDailyEventsInRange,
+    ) -> Result<Vec<CalenderDailyEventEntity>, sqlx::Error> {
+        sqlx::query_as!(
+            CalenderDailyEventEntity,
+            r#"
+            SELECT
+                id,
+                calendar_id,
+                title,
+                description,
+                date,
+                repeat AS "repeat: DailyEventRepeat",
+                repeat_until,
+                created,
+                updated
+            FROM memory.calender_daily_event
+            WHERE calendar_id = $1
+              AND date >= $2
+              AND date <= $3
+            ORDER BY date ASC
+            "#,
+            input.calendar_id,
+            input.from,
+            input.to,
+        )
+        .fetch_all(self.db())
+        .await
+    }
+}

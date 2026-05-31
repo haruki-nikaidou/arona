@@ -1,0 +1,33 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO memory.conversation_content\n                    (message_id, position, modality, text, object_hash, image_detail, audio_format)\n                VALUES ($1, $2, $3, $4, $5, $6, $7)\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int4",
+        {
+          "Custom": {
+            "name": "memory.content_modality",
+            "kind": {
+              "Enum": [
+                "Text",
+                "Image",
+                "Audio",
+                "File",
+                "Video"
+              ]
+            }
+          }
+        },
+        "Text",
+        "Bytea",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "603f43f9b257ed74233f2472890160e8aa0c6715e2488c916737fd987fbaf876"
+}

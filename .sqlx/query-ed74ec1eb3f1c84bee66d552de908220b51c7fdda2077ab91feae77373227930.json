@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE memory.contact_story\n            SET story_name = $2, story_summary = $3, story_text = $4\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ed74ec1eb3f1c84bee66d552de908220b51c7fdda2077ab91feae77373227930"
+}

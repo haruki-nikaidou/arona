@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM memory.calender_daily_event WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cfa06b66a02723e30b4b0d0fc0e1b9155bc17f6e86a7a4ea82d5499c45e05416"
+}

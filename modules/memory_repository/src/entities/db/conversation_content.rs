@@ -90,3 +90,104 @@ impl Processor<FindConversationContentById> for DatabaseProcessor {
         .await
     }
 }
+
+/// Insert a single content block for a message.
+#[derive(Debug, Clone)]
+pub struct CreateConversationContent {
+    pub message_id: i64,
+    pub position: i32,
+    pub modality: ContentModality,
+    pub text: Option<String>,
+    pub object_hash: Option<Vec<u8>>,
+    pub image_detail: Option<String>,
+    pub audio_format: Option<String>,
+}
+
+impl Processor<CreateConversationContent> for DatabaseProcessor {
+    type Output = i64;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:CreateConversationContent", err,
+        fields(message_id = input.message_id, position = input.position))]
+    async fn process(&self, input: CreateConversationContent) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar!(
+            r#"
+            INSERT INTO memory.conversation_content
+                (message_id, position, modality, text, object_hash, image_detail, audio_format)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id
+            "#,
+            input.message_id,
+            input.position,
+            input.modality as ContentModality,
+            input.text,
+            input.object_hash,
+            input.image_detail,
+            input.audio_format,
+        )
+        .fetch_one(self.db())
+        .await
+    }
+}
+
+/// Delete a content block by its primary key.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DeleteConversationContent {
+    pub id: i64,
+}
+
+impl Processor<DeleteConversationContent> for DatabaseProcessor {
+    type Output = bool;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:DeleteConversationContent", err, fields(id = input.id))]
+    async fn process(&self, input: DeleteConversationContent) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            "DELETE FROM memory.conversation_content WHERE id = $1",
+            input.id,
+        )
+        .execute(self.db())
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
+    }
+}
+
+/// All content blocks for a message ordered by position.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ListConversationContentByMessage {
+    pub message_id: i64,
+}
+
+impl Processor<ListConversationContentByMessage> for DatabaseProcessor {
+    type Output = Vec<ConversationContentEntity>;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:ListConversationContentByMessage", err,
+        fields(message_id = input.message_id))]
+    async fn process(
+        &self,
+        input: ListConversationContentByMessage,
+    ) -> Result<Vec<ConversationContentEntity>, sqlx::Error> {
+        sqlx::query_as!(
+            ConversationContentEntity,
+            r#"
+            SELECT
+                id,
+                message_id,
+                position,
+                modality AS "modality: ContentModality",
+                text,
+                object_hash,
+                image_detail,
+                audio_format
+            FROM memory.conversation_content
+            WHERE message_id = $1
+            ORDER BY position ASC
+            "#,
+            input.message_id,
+        )
+        .fetch_all(self.db())
+        .await
+    }
+}

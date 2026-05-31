@@ -1,0 +1,39 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO memory.calender_daily_event\n                (calendar_id, title, description, date, repeat, repeat_until)\n            VALUES ($1, $2, $3, $4, $5, $6)\n            RETURNING id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Date",
+        {
+          "Custom": {
+            "name": "memory.daily_event_repeat",
+            "kind": {
+              "Enum": [
+                "NoRepeat",
+                "EveryMonth",
+                "EveryYear",
+                "EveryWeekday"
+              ]
+            }
+          }
+        },
+        "Date"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "164ed28158d7f1f305b28088e53295fc230d87299ebcf102c02d0196274012d0"
+}

@@ -59,3 +59,147 @@ impl Processor<FindDiaryById> for DatabaseProcessor {
         .await
     }
 }
+
+/// Look up the diary entry for a specific date (the `date` column is UNIQUE).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FindDiaryByDate {
+    pub date: Date,
+}
+
+impl Processor<FindDiaryByDate> for DatabaseProcessor {
+    type Output = Option<DiaryEntity>;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:FindDiaryByDate", err, fields(date = %input.date))]
+    async fn process(&self, input: FindDiaryByDate) -> Result<Option<DiaryEntity>, sqlx::Error> {
+        sqlx::query_as!(
+            DiaryEntity,
+            r#"
+            SELECT id, title, date, summary, content, created_at, updated_at
+            FROM memory.diary
+            WHERE date = $1
+            LIMIT 1
+            "#,
+            input.date,
+        )
+        .fetch_optional(self.db())
+        .await
+    }
+}
+
+/// Insert a new diary entry.
+#[derive(Debug, Clone)]
+pub struct CreateDiary {
+    pub title: String,
+    pub date: Date,
+    pub summary: String,
+    pub content: String,
+}
+
+impl Processor<CreateDiary> for DatabaseProcessor {
+    type Output = i64;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:CreateDiary", err, fields(date = %input.date))]
+    async fn process(&self, input: CreateDiary) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar!(
+            r#"
+            INSERT INTO memory.diary (title, date, summary, content)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
+            "#,
+            input.title,
+            input.date,
+            input.summary,
+            input.content,
+        )
+        .fetch_one(self.db())
+        .await
+    }
+}
+
+/// Update the text content of an existing diary entry.
+#[derive(Debug, Clone)]
+pub struct UpdateDiary {
+    pub id: i64,
+    pub title: String,
+    pub summary: String,
+    pub content: String,
+}
+
+impl Processor<UpdateDiary> for DatabaseProcessor {
+    type Output = bool;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:UpdateDiary", err, fields(id = input.id))]
+    async fn process(&self, input: UpdateDiary) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            r#"
+            UPDATE memory.diary
+            SET title = $2, summary = $3, content = $4,
+                updated_at = (now() AT TIME ZONE 'utc')
+            WHERE id = $1
+            "#,
+            input.id,
+            input.title,
+            input.summary,
+            input.content,
+        )
+        .execute(self.db())
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
+    }
+}
+
+/// Delete a diary entry by its primary key.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DeleteDiary {
+    pub id: i64,
+}
+
+impl Processor<DeleteDiary> for DatabaseProcessor {
+    type Output = bool;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:DeleteDiary", err, fields(id = input.id))]
+    async fn process(&self, input: DeleteDiary) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            "DELETE FROM memory.diary WHERE id = $1",
+            input.id,
+        )
+        .execute(self.db())
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
+    }
+}
+
+/// Paginated list of diary entries ordered by date descending (most recent first).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ListDiaries {
+    pub limit: i64,
+    pub offset: i64,
+}
+
+impl Processor<ListDiaries> for DatabaseProcessor {
+    type Output = Vec<DiaryEntity>;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:ListDiaries", err)]
+    async fn process(&self, input: ListDiaries) -> Result<Vec<DiaryEntity>, sqlx::Error> {
+        sqlx::query_as!(
+            DiaryEntity,
+            r#"
+            SELECT id, title, date, summary, content, created_at, updated_at
+            FROM memory.diary
+            ORDER BY date DESC
+            LIMIT $1 OFFSET $2
+            "#,
+            input.limit,
+            input.offset,
+        )
+        .fetch_all(self.db())
+        .await
+    }
+}

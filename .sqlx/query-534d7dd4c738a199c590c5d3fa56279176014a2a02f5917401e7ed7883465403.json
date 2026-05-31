@@ -1,0 +1,67 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                id,\n                conversation_id,\n                before,\n                role AS \"role: MessageRole\",\n                created_at,\n                is_current_branch\n            FROM memory.conversation_message\n            WHERE conversation_id = $1\n              AND (NOT $2 OR is_current_branch)\n            ORDER BY created_at ASC\n            LIMIT $3 OFFSET $4\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "conversation_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "before",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "role: MessageRole",
+        "type_info": {
+          "Custom": {
+            "name": "memory.message_role",
+            "kind": {
+              "Enum": [
+                "System",
+                "User",
+                "Assistant",
+                "Tool"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "created_at",
+        "type_info": "Timestamp"
+      },
+      {
+        "ordinal": 5,
+        "name": "is_current_branch",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Bool",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "534d7dd4c738a199c590c5d3fa56279176014a2a02f5917401e7ed7883465403"
+}

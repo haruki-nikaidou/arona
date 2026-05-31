@@ -90,3 +90,140 @@ impl Processor<FindContactStoryById> for DatabaseProcessor {
         .await
     }
 }
+
+/// Insert a new story for a contact identity.
+#[derive(Debug, Clone)]
+pub struct CreateContactStory {
+    pub identity: Uuid,
+    pub story_type: StoryType,
+    pub story_name: String,
+    pub story_summary: String,
+    pub story_text: String,
+    pub happened_at: PrimitiveDateTime,
+    pub related_conversation: Option<i64>,
+}
+
+impl Processor<CreateContactStory> for DatabaseProcessor {
+    type Output = i64;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:CreateContactStory", err, fields(identity = %input.identity))]
+    async fn process(&self, input: CreateContactStory) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar!(
+            r#"
+            INSERT INTO memory.contact_story
+                (identity, story_type, story_name, story_summary, story_text, happened_at, related_conversation)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id
+            "#,
+            input.identity,
+            input.story_type as StoryType,
+            input.story_name,
+            input.story_summary,
+            input.story_text,
+            input.happened_at,
+            input.related_conversation,
+        )
+        .fetch_one(self.db())
+        .await
+    }
+}
+
+/// Update the narrative content of an existing story.
+#[derive(Debug, Clone)]
+pub struct UpdateContactStory {
+    pub id: i64,
+    pub story_name: String,
+    pub story_summary: String,
+    pub story_text: String,
+}
+
+impl Processor<UpdateContactStory> for DatabaseProcessor {
+    type Output = bool;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:UpdateContactStory", err, fields(id = input.id))]
+    async fn process(&self, input: UpdateContactStory) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            r#"
+            UPDATE memory.contact_story
+            SET story_name = $2, story_summary = $3, story_text = $4
+            WHERE id = $1
+            "#,
+            input.id,
+            input.story_name,
+            input.story_summary,
+            input.story_text,
+        )
+        .execute(self.db())
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
+    }
+}
+
+/// Delete a story by its primary key.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DeleteContactStory {
+    pub id: i64,
+}
+
+impl Processor<DeleteContactStory> for DatabaseProcessor {
+    type Output = bool;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:DeleteContactStory", err, fields(id = input.id))]
+    async fn process(&self, input: DeleteContactStory) -> Result<bool, sqlx::Error> {
+        let rows = sqlx::query!(
+            "DELETE FROM memory.contact_story WHERE id = $1",
+            input.id,
+        )
+        .execute(self.db())
+        .await?
+        .rows_affected();
+        Ok(rows > 0)
+    }
+}
+
+/// Paginated list of stories for an identity ordered by occurrence time (newest first).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ListContactStoriesByIdentity {
+    pub identity: Uuid,
+    pub limit: i64,
+    pub offset: i64,
+}
+
+impl Processor<ListContactStoriesByIdentity> for DatabaseProcessor {
+    type Output = Vec<ContactStoryEntity>;
+    type Error = sqlx::Error;
+
+    #[instrument(skip_all, name = "SQL:ListContactStoriesByIdentity", err, fields(identity = %input.identity))]
+    async fn process(
+        &self,
+        input: ListContactStoriesByIdentity,
+    ) -> Result<Vec<ContactStoryEntity>, sqlx::Error> {
+        sqlx::query_as!(
+            ContactStoryEntity,
+            r#"
+            SELECT
+                id,
+                identity,
+                story_type AS "story_type: StoryType",
+                story_name,
+                story_summary,
+                story_text,
+                happened_at,
+                related_conversation
+            FROM memory.contact_story
+            WHERE identity = $1
+            ORDER BY happened_at DESC
+            LIMIT $2 OFFSET $3
+            "#,
+            input.identity,
+            input.limit,
+            input.offset,
+        )
+        .fetch_all(self.db())
+        .await
+    }
+}

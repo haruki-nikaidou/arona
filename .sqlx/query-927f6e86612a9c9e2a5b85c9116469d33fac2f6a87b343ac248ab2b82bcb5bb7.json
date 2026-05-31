@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE memory.diary\n            SET title = $2, summary = $3, content = $4,\n                updated_at = (now() AT TIME ZONE 'utc')\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "927f6e86612a9c9e2a5b85c9116469d33fac2f6a87b343ac248ab2b82bcb5bb7"
+}

@@ -1,0 +1,84 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                id,\n                calendar_id,\n                title,\n                description,\n                time,\n                repeat AS \"repeat: CalenderEventRepeat\",\n                repeat_until,\n                created_at,\n                updated_at\n            FROM memory.calender_event\n            WHERE calendar_id = $1\n            ORDER BY time ASC\n            LIMIT $2 OFFSET $3\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "calendar_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "time",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "repeat: CalenderEventRepeat",
+        "type_info": {
+          "Custom": {
+            "name": "memory.calender_event_repeat",
+            "kind": {
+              "Enum": [
+                "NoRepeat",
+                "EveryDay",
+                "EveryMonth",
+                "EveryWeekday"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "repeat_until",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamp"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_at",
+        "type_info": "Timestamp"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "c6041367db0f71f79cb7ce9c3e812e1ad6fedb893044cdc5face27e719b28db3"
+}
